@@ -14,12 +14,12 @@ import numpy as np
 
 
 def load_csv(file_path):
-    df = pd.read_csv(file_path, index_col=False)
+    df = pd.read_csv(file_path, index_col=False, encoding='utf-8')
     return df
 
 
 def init_base_info():
-    # init info
+    # init info/
     base_info = load_csv('../ccf_data/base_info.csv')
     print('base info shape : ', base_info.shape)
 
@@ -47,10 +47,76 @@ def init_base_info():
     return base_info, annual_report_info, tax_info, change_info, news_info, other_info, train_id, submit_id
 
 
-def merge_fea_all():
-    pass
+def merge_fea_all(train_id, base_info):
+    # merge base info
+    # merge_fea = pd.merge(base_info, train_id, on=['id'], how='left')
+    merge_fea = pd.merge(train_id, base_info, on=['id'], how='left')
+    print('Merge Fea shape : ', merge_fea.shape)
+    return merge_fea
+
+
+def drop_na_cols(df, expect):
+    # df shape
+    rows, cols = df.shape[0], df.shape[1]
+
+    # remove expect
+    subset = list(df.columns)
+    for col in expect:
+        subset.remove(col)
+
+    # df drop na cols
+    df_isna = df.isna().sum()
+    thresh = 0.8
+    drop_list = []
+
+    for col in subset:
+        if df_isna[col] > rows * thresh:
+            drop_list.append(col)
+
+    for col in drop_list:
+        del df[col]
+
+    return df, drop_list
+
+
+def drop_single_cols(df, expect):
+    # df shape
+    rows, cols = df.shape[0], df.shape[1]
+
+    # remove expect
+    subset = list(df.columns)
+    for col in expect:
+        subset.remove(col)
+
+    cnt = 0
+    drop_list = []
+    thresh = 0.8
+
+    for col in subset:
+        cnt = len(df[col].value_counts())
+        if cnt >= thresh * rows:
+            del df[col]
+            drop_list.append(col)
+
+    return df, drop_list
 
 
 if __name__ == '__main__':
     # init info
     base_info, annual_report_info, tax_info, change_info, news_info, other_info, train_id, submit_id = init_base_info()
+
+    # get merge fea
+    merge_fea = merge_fea_all(train_id, base_info)
+
+    # remove na and null
+    merge_fea, drop_list_na = drop_na_cols(merge_fea, expect=['id', 'label'])
+
+    # remove single col
+    merge_fea, drop_list_single = drop_single_cols(merge_fea, expect=['id', 'label'])
+
+    # split year and month
+    merge_fea['year'] = merge_fea['opfrom'].apply(lambda x: int(x.split('-')[0]))
+    merge_fea['month'] = merge_fea['opfrom'].apply(lambda x: int(x.split('-')[1]))
+    del merge_fea['opfrom']
+
+    merge_fea.to_csv('./fea/fea.csv', index=False)
