@@ -82,29 +82,32 @@ def train_pred_lgb(train_data, features, test_data, cat_feature, file_path):
 
 if __name__ == '__main__':
     # load fea data
-    train_fea = load_csv('./fea/fea.csv')
+    train_fea = load_csv('./fea/fea_1104.csv')
 
     # drop some features
-    drop_list = ['opto', 'opform', 'enttypeminu', 'adbusign', 'venind']
-    for col in drop_list:
-        del train_fea[col]
+    # drop_list = ['opto', 'opform', 'enttypeminu', 'adbusign', 'venind']
+    # for col in drop_list:
+    #     del train_fea[col]
 
     # cata fea and drop fea
-    cat_fea = ['industryphy', 'oploc', 'orgid', 'jobid']
+    cat_fea = ['oplocdistrict', 'industryphy', 'industryco', 'enttype',
+       'enttypeitem', 'state', 'orgid', 'jobid', 'adbusign', 'townsign',
+       'regtype', 'compform', 'venind', 'enttypeminu', 'protype', 'enttypegb']
     drop = ['id', 'label']
     features, num_feature, cat_feature = fea_process(train_fea, drop, cat_fea)
 
     # load test data
     test_id = load_csv('../ccf_data/entprise_submit.csv')
-    base_info = load_csv('../ccf_data/base_info.csv')
+    # base_info = load_csv('../ccf_data/base_info.csv')
+    base_info = load_csv('../code/fea_explore/base_info.csv')
     test_data = pd.merge(test_id, base_info, on=['id'], how='left')
 
-    test_data['year'] = test_data['opfrom'].apply(lambda x: int(x.split('-')[0]))
-    test_data['month'] = test_data['opfrom'].apply(lambda x: int(x.split('-')[1]))
-    del test_data['opfrom']
+    # test_data['year'] = test_data['opfrom'].apply(lambda x: int(x.split('-')[0]))
+    # test_data['month'] = test_data['opfrom'].apply(lambda x: int(x.split('-')[1]))
+    # del test_data['opfrom']
 
     for i in cat_feature:
         test_data[i] = test_data[i].astype('category')
 
     # trian and predict
-    train_pred_lgb(train_fea, features, test_data, cat_feature, './submit_1103.csv')
+    train_pred_lgb(train_fea, features, test_data, cat_feature, './submit_1104.csv')

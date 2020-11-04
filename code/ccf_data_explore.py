@@ -20,7 +20,8 @@ def load_csv(file_path):
 
 def init_base_info():
     # init info/
-    base_info = load_csv('../ccf_data/base_info.csv')
+    # base_info = load_csv('../ccf_data/base_info.csv')
+    base_info = load_csv('../code/fea_explore/base_info.csv')
     print('base info shape : ', base_info.shape)
 
     annual_report_info = load_csv('../ccf_data/annual_report_info.csv')
@@ -115,8 +116,14 @@ if __name__ == '__main__':
     merge_fea, drop_list_single = drop_single_cols(merge_fea, expect=['id', 'label'])
 
     # split year and month
-    merge_fea['year'] = merge_fea['opfrom'].apply(lambda x: int(x.split('-')[0]))
-    merge_fea['month'] = merge_fea['opfrom'].apply(lambda x: int(x.split('-')[1]))
-    del merge_fea['opfrom']
+    # merge_fea['year'] = merge_fea['opfrom'].apply(lambda x: int(x.split('-')[0]))
+    # merge_fea['month'] = merge_fea['opfrom'].apply(lambda x: int(x.split('-')[1]))
 
-    merge_fea.to_csv('./fea/fea.csv', index=False)
+    # del cols
+    del_list = ['opfrom', 'opto', 'oploc']
+    for col in del_list:
+        del merge_fea[col]
+
+    print(merge_fea.columns)
+
+    merge_fea.to_csv('./fea/fea_1104.csv', index=False)
