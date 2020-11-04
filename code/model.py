@@ -13,6 +13,7 @@
 import pandas as pd
 import numpy as np
 import lightgbm as lgb
+from functools import reduce
 from sklearn import metrics
 from sklearn.model_selection import StratifiedKFold,KFold
 
@@ -100,7 +101,10 @@ if __name__ == '__main__':
     test_id = load_csv('../ccf_data/entprise_submit.csv')
     # base_info = load_csv('../ccf_data/base_info.csv')
     base_info = load_csv('../code/fea_explore/base_info.csv')
-    test_data = pd.merge(test_id, base_info, on=['id'], how='left')
+    other_info = load_csv('../code/fea_explore/other_info.csv')
+    dfs = [test_id, base_info, other_info]
+    test_data = reduce(lambda left, right: pd.merge(left, right, on=['id'], how='left'), dfs)
+    # test_data = pd.merge(test_id, base_info, on=['id'], how='left')
 
     # test_data['year'] = test_data['opfrom'].apply(lambda x: int(x.split('-')[0]))
     # test_data['month'] = test_data['opfrom'].apply(lambda x: int(x.split('-')[1]))

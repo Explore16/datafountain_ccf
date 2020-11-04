@@ -10,6 +10,7 @@
 2020/10/30 17:07   shuaiyicao    1.0         None
 """
 import pandas as pd
+from functools import reduce
 import numpy as np
 
 
@@ -36,7 +37,7 @@ def init_base_info():
     news_info = load_csv('../ccf_data/news_info.csv')
     print('news info shape : ', news_info.shape)
 
-    other_info = load_csv('../ccf_data/other_info.csv')
+    other_info = load_csv('../code/fea_explore/other_info.csv')
     print('other info shape : ', other_info.shape)
 
     train_id = load_csv('../ccf_data/entprise_info.csv')
@@ -48,11 +49,22 @@ def init_base_info():
     return base_info, annual_report_info, tax_info, change_info, news_info, other_info, train_id, submit_id
 
 
-def merge_fea_all(train_id, base_info):
+def merge_fea_all(train_id, base_info, other_info):
     # merge base info
     # merge_fea = pd.merge(base_info, train_id, on=['id'], how='left')
-    merge_fea = pd.merge(train_id, base_info, on=['id'], how='left')
+    # merge_fea = pd.merge(train_id, base_info, on=['id'], how='left')
+    # merge_fea = pd.merge(merge_fea, other_info, on=['id'], how='left')
+
+    dfs = [train_id, base_info, other_info]
+    merge_fea = reduce(lambda left, right: pd.merge(left, right, on=['id'], how='left'), dfs)
+
+    convert_col = ['legal_judgment_num', 'brand_num', 'patent_num']
+    for col in convert_col:
+        merge_fea[col].fillna(-1, inplace=True)
+        other_info[col] = other_info[col].astype('float64')
+
     print('Merge Fea shape : ', merge_fea.shape)
+    print(merge_fea.columns)
     return merge_fea
 
 
@@ -107,13 +119,15 @@ if __name__ == '__main__':
     base_info, annual_report_info, tax_info, change_info, news_info, other_info, train_id, submit_id = init_base_info()
 
     # get merge fea
-    merge_fea = merge_fea_all(train_id, base_info)
+    merge_fea = merge_fea_all(train_id, base_info, other_info)
 
     # remove na and null
-    merge_fea, drop_list_na = drop_na_cols(merge_fea, expect=['id', 'label'])
+    merge_fea, drop_list_na = drop_na_cols(merge_fea, expect=['id', 'label', 'legal_judgment_num', 'brand_num',
+                                                              'patent_num'])
 
     # remove single col
-    merge_fea, drop_list_single = drop_single_cols(merge_fea, expect=['id', 'label'])
+    merge_fea, drop_list_single = drop_single_cols(merge_fea, expect=['id', 'label', 'legal_judgment_num', 'brand_num',
+                                                                      'patent_num'])
 
     # split year and month
     # merge_fea['year'] = merge_fea['opfrom'].apply(lambda x: int(x.split('-')[0]))
