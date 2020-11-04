@@ -11,8 +11,10 @@
 """
 
 import pandas as pd
+import numpy as np
 import lightgbm as lgb
-from sklearn.model_selection import StratifiedKFold, KFold
+from sklearn import metrics
+from sklearn.model_selection import StratifiedKFold,KFold
 
 
 def load_csv(file_path):
@@ -40,9 +42,41 @@ def fea_process(df, drop_list, cat_fea):
     return features, num_feature, cat_feature
 
 
-def get_predict(model, test_data, features, file_path):
-    score = model.predict(test_data[features])
-    test_data['score'] = score
+def train_pred_lgb(train_data, features, test_data, cat_feature, file_path):
+    train_x = train_data[features]
+    train_y = train_data['label']
+    kf = StratifiedKFold(n_splits=5, shuffle=True, random_state=2020)
+    y_pred = np.zeros(len(test_data))
+
+    for fold, (train_index, val_index) in enumerate(kf.split(train_x, train_y)):
+        x_train, x_val = train_x.iloc[train_index], train_x.iloc[val_index]
+        y_train, y_val = train_y.iloc[train_index], train_y.iloc[val_index]
+        train_set = lgb.Dataset(x_train, y_train)
+        val_set = lgb.Dataset(x_val, y_val)
+
+        params = {
+            'boosting_type': 'gbdt',
+            'metric': {'auc'},
+            'objective': 'binary',
+            'seed': 2020,
+            'num_leaves': 50,
+            'learning_rate': 0.1,
+            'max_depth': 10,
+            'n_estimators': 5000,
+            'lambda_l1': 1,
+            'lambda_l2': 1,
+            'bagging_fraction': 0.7,
+            'bagging_freq': 1,
+            'colsample_bytree': 0.7,
+            'verbose': 1,
+        }
+
+        model = lgb.train(params, train_set, categorical_feature=cat_feature, num_boost_round=5000,
+                          early_stopping_rounds=50, valid_sets=[val_set], verbose_eval=100)
+        y_pred += model.predict(test_data[features], num_iteration=model.best_iteration) / kf.n_splits
+
+    print(y_pred)
+    test_data['score'] = y_pred
     test_data[['id', 'score']].to_csv(file_path, index=False)
 
 
@@ -60,13 +94,6 @@ if __name__ == '__main__':
     drop = ['id', 'label']
     features, num_feature, cat_feature = fea_process(train_fea, drop, cat_fea)
 
-    lgb_model = lgb.LGBMRegressor(num_leaves=64, reg_alpha=0., reg_lambda=0.01, metric='rmse',
-                                  max_depth=-1, learning_rate=0.05, min_child_samples=10, seed=2020,
-                                  n_estimators=2000, subsample=0.7, colsample_bytree=0.7, subsample_freq=1)
-    train_x = train_fea[features]
-    train_y = train_fea['label']
-    lgb_model.fit(train_x, train_y)
-
     # load test data
     test_id = load_csv('../ccf_data/entprise_submit.csv')
     base_info = load_csv('../ccf_data/base_info.csv')
@@ -79,5 +106,5 @@ if __name__ == '__main__':
     for i in cat_feature:
         test_data[i] = test_data[i].astype('category')
 
-    # predict
-    get_predict(lgb_model, test_data, features, './submit_1102.csv')
+    # trian and predict
+    train_pred_lgb(train_fea, features, test_data, cat_feature, './submit_1103.csv')
