@@ -118,5 +118,7 @@ if __name__ == '__main__':
     for col in fillna_col:
         test_data[col].fillna(0, inplace=True)
 
+    test_data.to_csv('./test_data.csv', index=False)
+
     # trian and predict
     train_pred_lgb(train_fea, features, test_data, cat_feature, './submit_1105.csv')
