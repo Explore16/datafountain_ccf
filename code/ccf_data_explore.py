@@ -34,7 +34,7 @@ def init_base_info():
     change_info = load_csv('../ccf_data/change_info.csv')
     print('change info shape : ', change_info.shape)
 
-    news_info = load_csv('../ccf_data/news_info.csv')
+    news_info = load_csv('../code/fea_explore/news_info.csv')
     print('news info shape : ', news_info.shape)
 
     other_info = load_csv('../code/fea_explore/other_info.csv')
@@ -49,13 +49,13 @@ def init_base_info():
     return base_info, annual_report_info, tax_info, change_info, news_info, other_info, train_id, submit_id
 
 
-def merge_fea_all(train_id, base_info, other_info):
+def merge_fea_all(train_id, base_info, other_info, news_info):
     # merge base info
     # merge_fea = pd.merge(base_info, train_id, on=['id'], how='left')
     # merge_fea = pd.merge(train_id, base_info, on=['id'], how='left')
     # merge_fea = pd.merge(merge_fea, other_info, on=['id'], how='left')
 
-    dfs = [train_id, base_info, other_info]
+    dfs = [train_id, base_info, other_info, news_info]
     merge_fea = reduce(lambda left, right: pd.merge(left, right, on=['id'], how='left'), dfs)
 
     convert_col = ['legal_judgment_num', 'brand_num', 'patent_num']
@@ -119,15 +119,17 @@ if __name__ == '__main__':
     base_info, annual_report_info, tax_info, change_info, news_info, other_info, train_id, submit_id = init_base_info()
 
     # get merge fea
-    merge_fea = merge_fea_all(train_id, base_info, other_info)
+    merge_fea = merge_fea_all(train_id, base_info, other_info, news_info)
 
     # remove na and null
     merge_fea, drop_list_na = drop_na_cols(merge_fea, expect=['id', 'label', 'legal_judgment_num', 'brand_num',
-                                                              'patent_num'])
+                                                              'patent_num', 'news_sum', 'news_pos_sum', 'news_mid_sum',
+                                                              'news_neg_sum'])
 
     # remove single col
     merge_fea, drop_list_single = drop_single_cols(merge_fea, expect=['id', 'label', 'legal_judgment_num', 'brand_num',
-                                                                      'patent_num'])
+                                                              'patent_num', 'news_sum', 'news_pos_sum', 'news_mid_sum',
+                                                              'news_neg_sum'])
 
     # split year and month
     # merge_fea['year'] = merge_fea['opfrom'].apply(lambda x: int(x.split('-')[0]))
@@ -140,4 +142,6 @@ if __name__ == '__main__':
 
     print(merge_fea.columns)
 
-    merge_fea.to_csv('./fea/fea_1104.csv', index=False)
+    merge_fea.fillna(0, inplace=True)
+
+    merge_fea.to_csv('./fea/fea_1105.csv', index=False)

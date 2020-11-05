@@ -102,7 +102,8 @@ if __name__ == '__main__':
     # base_info = load_csv('../ccf_data/base_info.csv')
     base_info = load_csv('../code/fea_explore/base_info.csv')
     other_info = load_csv('../code/fea_explore/other_info.csv')
-    dfs = [test_id, base_info, other_info]
+    news_info = load_csv('../code/fea_explore/news_info.csv')
+    dfs = [test_id, base_info, other_info, news_info]
     test_data = reduce(lambda left, right: pd.merge(left, right, on=['id'], how='left'), dfs)
     # test_data = pd.merge(test_id, base_info, on=['id'], how='left')
 
@@ -113,5 +114,9 @@ if __name__ == '__main__':
     for i in cat_feature:
         test_data[i] = test_data[i].astype('category')
 
+    fillna_col = ['news_sum', 'news_pos_sum', 'news_mid_sum', 'news_neg_sum']
+    for col in fillna_col:
+        test_data[col].fillna(0, inplace=True)
+
     # trian and predict
-    train_pred_lgb(train_fea, features, test_data, cat_feature, './submit_1104.csv')
+    train_pred_lgb(train_fea, features, test_data, cat_feature, './submit_1105.csv')
