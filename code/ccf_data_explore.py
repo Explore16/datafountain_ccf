@@ -31,7 +31,7 @@ def init_base_info():
     tax_info = load_csv('../ccf_data/tax_info.csv')
     print('tax info shape : ', tax_info.shape)
 
-    change_info = load_csv('../ccf_data/change_info.csv')
+    change_info = load_csv('../code/fea_explore/change_info.csv')
     print('change info shape : ', change_info.shape)
 
     news_info = load_csv('../code/fea_explore/news_info.csv')
@@ -49,13 +49,13 @@ def init_base_info():
     return base_info, annual_report_info, tax_info, change_info, news_info, other_info, train_id, submit_id
 
 
-def merge_fea_all(train_id, base_info, other_info, news_info):
+def merge_fea_all(train_id, base_info, other_info, news_info, change_info):
     # merge base info
     # merge_fea = pd.merge(base_info, train_id, on=['id'], how='left')
     # merge_fea = pd.merge(train_id, base_info, on=['id'], how='left')
     # merge_fea = pd.merge(merge_fea, other_info, on=['id'], how='left')
 
-    dfs = [train_id, base_info, other_info, news_info]
+    dfs = [train_id, base_info, other_info, news_info, change_info]
     merge_fea = reduce(lambda left, right: pd.merge(left, right, on=['id'], how='left'), dfs)
 
     convert_col = ['legal_judgment_num', 'brand_num', 'patent_num']
@@ -119,7 +119,7 @@ if __name__ == '__main__':
     base_info, annual_report_info, tax_info, change_info, news_info, other_info, train_id, submit_id = init_base_info()
 
     # get merge fea
-    merge_fea = merge_fea_all(train_id, base_info, other_info, news_info)
+    merge_fea = merge_fea_all(train_id, base_info, other_info, news_info, change_info)
 
     # remove na and null
     merge_fea, drop_list_na = drop_na_cols(merge_fea, expect=['id', 'label', 'legal_judgment_num', 'brand_num',
@@ -144,4 +144,4 @@ if __name__ == '__main__':
 
     merge_fea.fillna(0, inplace=True)
 
-    merge_fea.to_csv('./fea/fea_1105.csv', index=False)
+    merge_fea.to_csv('./fea/fea_1106.csv', index=False)
